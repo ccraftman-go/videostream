@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"os"
 
 	w "go-videostream/pkg/webrtc"
 
@@ -20,8 +21,19 @@ func Room(c *fiber.Ctx) error {
 		c.Status(400)
 		return nil
 	}
+	ws := "ws"
+	if os.Getenv("ENVIRONMENT") == "PRODUCTION" {
+		ws = "wss"
+	}
 	uuid, suuid, _ := createOrGetRoom(uuid)
-	return nil
+	return c.Render("peer", fiber.Map{
+		"RoomWebSocketAddr":   fmt.Sprintf("%s://%s/room%s/websocket", ws, c.Hostname(), uuid),
+		"RoomLink":            fmt.Sprintf("%s://%s/room/%s", c.Protocol(), c.Hostname(), uuid),
+		"ChatWebSocketAddr":   fmt.Sprintf("%s://%s/room/%s/chat/websocket", ws, c.Hostname(), uuid),
+		"ViewerWebSocketAddr": fmt.Sprintf("%s://%s/room/%s/viewer/websocket", ws, c.Hostname(), uuid),
+		"StreamLink":          fmt.Sprintf("%s://%s/stream/%s/", c.Protocol(), c.Hostname(), suuid),
+		"Type":                "room",
+	}, "layouts/main")
 }
 
 func Roomwebsocket(c *websocket.Conn) {
@@ -40,10 +52,22 @@ func createOrGetRoom(uuid string) (string, string, Room) {
 }
 
 func RoomViewerWebsocket(c *websocket.Conn) {
-
+	uuid := c.Params("uuid")
+	if uuid == "" {
+		return
+	}
+	w.RoomsLock.Lock()
+	if peer, ok := w.Rooms[uuid]; ok {
+		w.RoomsLock.Unlock()
+		RoomViewerConn(c, peers.Peers)
+		return
+	}
+	w.RoomsLock.Unlock()
 }
 
-func romViewerConn(c *websocket.Conn, p *w.Peers) {}
+func RoomViewerConn(c *websocket.Conn, p *w.Peers) {
+
+}
 
 type websocketMsg struct {
 	Event string `json:"event"`

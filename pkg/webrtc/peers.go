@@ -1,6 +1,9 @@
 package webrtc
 
-import "sync"
+import (
+	"sync"
+	"videostream/pkg/chat"
+)
 
 type Room struct {
 	Peers *Peers

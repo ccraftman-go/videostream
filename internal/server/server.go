@@ -60,7 +60,7 @@ func Run() error {
 }
 
 func dispatchKeyFrames() {
-	for range time.NewTicket(time.Second * 3).C {
+	for range time.NewTicker(time.Second * 3).C {
 		for _, room := range w.Rooms {
 			room.Peers.DispatchKeyFrame()
 		}
